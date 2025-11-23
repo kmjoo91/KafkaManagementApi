@@ -11,6 +11,7 @@ Kafka Topic 생성 및 관리 기능을 제공하는 REST API 서버입니다.
 - **Kafka Topic 생성**: 새로운 Topic을 생성합니다.
 - **Topic Partition 수 변경 (증가)**: 기존 Topic의 Partition 수를 증가시킵니다.
 - **Topic 정보 조회**: Topic의 상세 정보를 조회합니다.
+- **Topic 삭제**: 기존 Topic을 삭제합니다.
 - **(확장 여지) Producer/Consumer 데이터 조작**: 향후 확장 가능한 기능입니다.
 
 ## 기술 스택
@@ -87,6 +88,16 @@ GET /api/kafka/topics/{topicName}
 }
 ```
 
+### 4. Topic 삭제
+
+```http
+DELETE /api/kafka/topics/{topicName}
+```
+
+**응답:**
+- `200 OK`: Topic 삭제 성공
+- `400 Bad Request`: Topic 삭제 실패
+
 ## 실행 방법
 
 ### 1. 빌드
@@ -137,10 +148,15 @@ curl -X PUT http://localhost:8080/api/kafka/topics/test-topic/partitions \
 curl http://localhost:8080/api/kafka/topics/test-topic
 ```
 
+### Topic 삭제
+
+```bash
+curl -X DELETE http://localhost:8080/api/kafka/topics/test-topic
+```
+
 ## 향후 확장 계획
 
 - Producer/Consumer 데이터 조작 기능
-- Topic 삭제 기능
 - Consumer Group 관리 기능
 - 메시지 조회 및 전송 기능
 

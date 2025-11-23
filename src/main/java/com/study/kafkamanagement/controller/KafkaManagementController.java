@@ -78,5 +78,20 @@ public class KafkaManagementController {
         
         return ResponseEntity.ok(response);
     }
+    
+    /**
+     * Topic 삭제
+     */
+    @DeleteMapping("/topics/{topicName}")
+    public ResponseEntity<String> deleteTopic(@PathVariable String topicName) {
+        boolean success = kafkaManagementService.deleteTopic(topicName);
+        
+        if (success) {
+            return ResponseEntity.ok("Topic deleted successfully: " + topicName);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Failed to delete topic: " + topicName);
+        }
+    }
 }
 

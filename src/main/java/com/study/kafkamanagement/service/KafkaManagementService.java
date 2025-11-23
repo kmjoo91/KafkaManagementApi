@@ -119,5 +119,27 @@ public class KafkaManagementService {
             return null;
         }
     }
+    
+    /**
+     * Kafka Topic 삭제
+     * 
+     * @param topicName 토픽 이름
+     * @return 삭제 성공 여부
+     */
+    public boolean deleteTopic(String topicName) {
+        try {
+            kafkaAdminClient.deleteTopics(Collections.singletonList(topicName))
+                    .topicNameValues().get(topicName).get();
+            log.info("Topic deleted successfully: {}", topicName);
+            return true;
+        } catch (ExecutionException e) {
+            log.error("Failed to delete topic: {}", topicName, e);
+            return false;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Interrupted while deleting topic: {}", topicName, e);
+            return false;
+        }
+    }
 }
 
