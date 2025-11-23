@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: kafka-management-api
+
+server:
+  port: 8080
+
+kafka:
+  bootstrap-servers: localhost:9092
+  security:
+    protocol: PLAINTEXT
+    # SSL/SASL 설정 예시 (필요시 주석 해제)
+    # protocol: SSL
+    # mechanism: PLAIN
+    # username: your-username
+    # password: your-password
+    # truststore-location: /path/to/truststore.jks
+    # truststore-password: truststore-password
+    # keystore-location: /path/to/keystore.jks
+    # keystore-password: keystore-password
+
+logging:
+  level:
+    com.study.kafkamanagement: DEBUG
+    org.apache.kafka: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
