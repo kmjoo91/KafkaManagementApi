@@ -34,7 +34,7 @@ public class KafkaManagementService {
             NewTopic newTopic = new NewTopic(topicName, numPartitions, replicationFactor);
             CreateTopicsResult result = kafkaAdminClient.createTopics(Collections.singletonList(newTopic));
             
-            result.all().get();
+            result.values().get(topicName).get();
             log.info("Topic created successfully: {} with {} partitions and replication factor {}", 
                     topicName, numPartitions, replicationFactor);
             return true;
@@ -63,7 +63,7 @@ public class KafkaManagementService {
         try {
             // 현재 토픽 정보 조회
             Map<String, TopicDescription> topicDescriptions = 
-                    kafkaAdminClient.describeTopics(Collections.singletonList(topicName)).all().get();
+                    kafkaAdminClient.describeTopics(Collections.singletonList(topicName)).allTopicNames().get();
             
             TopicDescription topicDescription = topicDescriptions.get(topicName);
             if (topicDescription == null) {
@@ -85,7 +85,7 @@ public class KafkaManagementService {
                     NewPartitions.increaseTo(newPartitionCount)
             );
             
-            kafkaAdminClient.createPartitions(newPartitions).all().get();
+            kafkaAdminClient.createPartitions(newPartitions).values().get(topicName).get();
             log.info("Partition count increased for topic {} from {} to {}", 
                     topicName, currentPartitionCount, newPartitionCount);
             return true;
@@ -108,7 +108,7 @@ public class KafkaManagementService {
     public TopicDescription getTopicInfo(String topicName) {
         try {
             Map<String, TopicDescription> topicDescriptions = 
-                    kafkaAdminClient.describeTopics(Collections.singletonList(topicName)).all().get();
+                    kafkaAdminClient.describeTopics(Collections.singletonList(topicName)).allTopicNames().get();
             return topicDescriptions.get(topicName);
         } catch (ExecutionException e) {
             log.error("Failed to get topic info: {}", topicName, e);
