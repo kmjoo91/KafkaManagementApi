@@ -1,68 +1,36 @@
 package com.study.kafkamanagement.config;
 
-import lombok.Getter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.bind.DefaultValue;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.HashMap;
-import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Configuration
-@ConfigurationProperties(prefix = "kafka")
-@Getter
+@EnableConfigurationProperties(KafkaProperties.class)
+@RequiredArgsConstructor
 public class KafkaConfig {
     
-    private final String bootstrapServers;
-    private final Security security;
+    private final KafkaProperties kafkaProperties;
     
-    public KafkaConfig(String bootstrapServers, @DefaultValue Security security) {
-        this.bootstrapServers = bootstrapServers;
-        this.security = security != null ? security : new Security();
-    }
-    
-    @Getter
-    public static class Security {
-        private final String protocol;
-        private final String mechanism;
-        private final String username;
-        private final String password;
-        private final String truststoreLocation;
-        private final String truststorePassword;
-        private final String keystoreLocation;
-        private final String keystorePassword;
-        
-        public Security() {
-            this("PLAINTEXT", null, null, null, null, null, null, null);
-        }
-        
-        public Security(
-                @DefaultValue("PLAINTEXT") String protocol,
-                String mechanism,
-                String username,
-                String password,
-                String truststoreLocation,
-                String truststorePassword,
-                String keystoreLocation,
-                String keystorePassword) {
-            this.protocol = protocol != null ? protocol : "PLAINTEXT";
-            this.mechanism = mechanism;
-            this.username = username;
-            this.password = password;
-            this.truststoreLocation = truststoreLocation;
-            this.truststorePassword = truststorePassword;
-            this.keystoreLocation = keystoreLocation;
-            this.keystorePassword = keystorePassword;
-        }
-    }
-    
-    @Bean
+    @Bean(destroyMethod = "close")
     public AdminClient kafkaAdminClient() {
         Map<String, Object> configs = new HashMap<>();
-        configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrapServers());
+        configs.put(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, 5000);
+        configs.put(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, 5000);
+        
+        KafkaProperties.Security security = kafkaProperties.getSecurity();
         
         // Security 설정
         if (security.getProtocol() != null && !security.getProtocol().equals("PLAINTEXT")) {
@@ -95,7 +63,25 @@ public class KafkaConfig {
             }
         }
         
-        return AdminClient.create(configs);
+        AdminClient adminClient = AdminClient.create(configs);
+        
+        // Kafka 서버 연결 확인
+        try {
+            log.info("Checking Kafka server connection to: {}", kafkaProperties.getBootstrapServers());
+            adminClient.listTopics().listings().get(5, TimeUnit.SECONDS);
+            log.info("Successfully connected to Kafka server: {}", kafkaProperties.getBootstrapServers());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            adminClient.close();
+            throw new IllegalStateException(
+                "Interrupted while connecting to Kafka server: " + kafkaProperties.getBootstrapServers(), e);
+        } catch (ExecutionException | TimeoutException e) {
+            adminClient.close();
+            throw new IllegalStateException(
+                "Failed to connect to Kafka server: " + kafkaProperties.getBootstrapServers() + 
+                ". Please make sure Kafka server is running.", e);
+        }
+        
+        return adminClient;
     }
 }
-
